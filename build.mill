@@ -13,6 +13,11 @@ import mill._, scalalib._, publish._
 
 import mill.api.Result
 
+// JMH dependencies for benchmarking
+def jmhDependencies = Agg(
+  ivy"org.openjdk.jmh:jmh-core:1.36",
+  ivy"org.openjdk.jmh:jmh-generator-annprocess:1.36"
+)
 
 //  mill --import ivy:com.lihaoyi::mill-contrib-bloop: mill.contrib.bloop.Bloop/install
 trait Common extends ScalaModule with PublishModule {
@@ -100,6 +105,41 @@ object Generated {$resourceDir
     object test extends ScalaJSTests with SharedTests
   }
 
+}
+
+// Benchmark module for JMH benchmarks
+object benchmark extends ScalaModule {
+  def scalaVersion = scautable.jvm.scalaVersion
+  def moduleDeps = Seq(scautable.jvm)
+  def ivyDeps = super.ivyDeps() ++ jmhDependencies
+  
+  // Use the sources from the dedicated benchmark directory
+  override def sources = T.sources {
+    super.sources()
+  }
+  
+  // Command to run benchmarks
+  def runBenchmarks() = T.command {
+    // Custom benchmark runner (non-JMH)
+    val classPath = runClasspath().map(_.path)
+    val mainClass = "io.github.quafadas.scautable.benchmark.BenchmarkMain"
+    
+    os.proc("java", 
+      "-cp", classPath.mkString(System.getProperty("path.separator")),
+      mainClass
+    ).call(stdout = os.Inherit, stderr = os.Inherit)
+  }
+  
+  // Command to run JMH benchmarks
+  def runJmhBenchmarks() = T.command {
+    val classPath = runClasspath().map(_.path)
+    val mainClass = "io.github.quafadas.scautable.benchmark.JmhRunner"
+    
+    os.proc("java", 
+      "-cp", classPath.mkString(System.getProperty("path.separator")),
+      mainClass
+    ).call(stdout = os.Inherit, stderr = os.Inherit)
+  }
 }
 
 object site extends SiteModule {

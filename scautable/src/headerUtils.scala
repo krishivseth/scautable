@@ -1,7 +1,6 @@
 package io.github.quafadas.scautable
 
 import scala.util.matching.Regex
-import io.github.quafadas.scautable.HeaderUtils._
 
 /**
  * Utilities for managing and normalizing CSV headers.
